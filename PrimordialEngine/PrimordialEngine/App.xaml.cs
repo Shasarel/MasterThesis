@@ -1,17 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace PrimordialEngine
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
-    public partial class App : Application
+    public partial class App
     {
+        private void ApplicationStartup(object sender, StartupEventArgs e) {
+            var graphicApi = PrimordialEngine.Properties.Settings.Default?.GraphicAPI?.ToUpper();
+
+            switch (graphicApi)
+            {
+                case "OPENGL":
+                    StartupUri = new Uri("OpenGLWindow.xaml", System.UriKind.Relative);
+                    break;
+                case "DIRECTX":
+                    StartupUri = new Uri("OpenGLWindow.xaml", System.UriKind.Relative);
+                    break;
+                default:
+                    return;
+            }
+        }
     }
 }
