@@ -12,7 +12,7 @@ namespace PrimordialEngine
         static void Main()
         {
             new OpenGLForm();
-            //Application.Run(new DirectXForm().renderForm);
+            new DirectXForm();
         }
     }
 }
