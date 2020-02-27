@@ -1,74 +1,54 @@
 ﻿using System;
+using System.Windows.Forms;
 using GlmNet;
+using PrimordialEngine.Interfaces;
 using SharpGL;
 using SharpGL.Shaders;
 using SharpGL.VertexBuffers;
 
-namespace PrimordialEngine
+namespace PrimordialEngine.OpenGLRenderer
 {
-    /// <summary>
-    /// Represents the Scene for this sample.
-    /// </summary>
-    /// <remarks>
-    /// This code is based on work from the OpenGL 4.x Swiftless tutorials, please see:
-    /// http://www.swiftless.com/opengl4tuts.html
-    /// </remarks>
-    public class Scene
+    public class OpenGLRenderer:IPrimordialRenderer
     {
-        //  The projection, view and model matrices.
+
+        private readonly Scene scene = new Scene();
+        private OpenGLRenderingForm _openGLRenderingForm;
         mat4 projectionMatrix;
         mat4 viewMatrix;
         mat4 modelMatrix;
-
-        //  Constants that specify the attribute indexes.
         const uint attributeIndexPosition = 0;
         const uint attributeIndexColour = 1;
 
-        //  The vertex buffer array which contains the vertex and colour buffers.
         VertexBufferArray vertexBufferArray;
-    
-        //  The shader program for our vertex and fragment shader.
+
         private ShaderProgram shaderProgram;
 
-        /// <summary>
-        /// Initialises the scene.
-        /// </summary>
-        /// <param name="gl">The OpenGL instance.</param>
-        /// <param name="width">The width of the screen.</param>
-        /// <param name="height">The height of the screen.</param>
-        public void Initialise(OpenGL gl, float width, float height)
+        private void InitializeOpenGL(OpenGL gl, int height, int width)
         {
             //  Set a blue clear colour.
             gl.ClearColor(0.4f, 0.6f, 0.9f, 0.0f);
 
             //  Create the shader program.
-            var vertexShaderSource = ManifestResourceLoader.LoadTextFile("VertexShader.glsl");
-            var fragmentShaderSource = ManifestResourceLoader.LoadTextFile("FragmentShader.glsl");
+            var vertexShaderSource = ManifestResourceLoader.LoadTextFile("OpenGLRenderer\\Shaders\\VertexShader.glsl");
+            var fragmentShaderSource = ManifestResourceLoader.LoadTextFile("OpenGLRenderer\\Shaders\\FragmentShader.glsl");
             shaderProgram = new ShaderProgram();
             shaderProgram.Create(gl, vertexShaderSource, fragmentShaderSource, null);
             shaderProgram.BindAttributeLocation(gl, attributeIndexPosition, "in_Position");
             shaderProgram.BindAttributeLocation(gl, attributeIndexColour, "in_Color");
             shaderProgram.AssertValid(gl);
 
-            //  Create a perspective projection matrix.
-            const float rads = (60.0f / 360.0f) * (float)Math.PI * 2.0f;
-            projectionMatrix = glm.perspective(rads, width / height, 0.1f, 100.0f);
-
-            //  Create a view matrix to move us back a bit.
+            const float rads = (90.0f / 360.0f) * (float)Math.PI * 2.0f;
+            projectionMatrix = glm.perspective(rads, width / (float)height, 0.1f, 100.0f);
             viewMatrix = glm.translate(new mat4(1.0f), new vec3(0.0f, 0.0f, -5.0f));
 
-            //  Create a model matrix to make the model a little bigger.
             modelMatrix = glm.scale(new mat4(1.0f), new vec3(2.5f));
 
             //  Now create the geometry for the square.
             CreateVerticesForSquare(gl);
+            scene.Initialise(gl,width,height);
         }
 
-        /// <summary>
-        /// Draws the scene.
-        /// </summary>
-        /// <param name="gl">The OpenGL instance.</param>
-        public void Draw(OpenGL gl)
+        private void Draw(OpenGL gl)
         {
             //  Clear the scene.
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT | OpenGL.GL_STENCIL_BUFFER_BIT);
@@ -83,17 +63,29 @@ namespace PrimordialEngine
             vertexBufferArray.Bind(gl);
 
             //  Draw the square.
-            gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, 6); 
+            gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, 6);
 
             //  Unbind our vertex array and shader.
             vertexBufferArray.Unbind(gl);
             shaderProgram.Unbind(gl);
         }
-        
-        /// <summary>
-        /// Creates the geometry for the square, also creating the vertex buffer array.
-        /// </summary>
-        /// <param name="gl">The OpenGL instance.</param>
+
+        public void Initialize(int height, int width, PrimordialObject primordialObject)
+        {
+            _openGLRenderingForm = new OpenGLRenderingForm(InitializeOpenGL, Draw, height, width);
+        }
+
+        public void Start()
+        {
+            if(_openGLRenderingForm != null)
+                Application.Run(_openGLRenderingForm);
+        }
+
+        public void Dispose()
+        {
+            if (_openGLRenderingForm != null)
+                _openGLRenderingForm.Dispose();
+        }
         private void CreateVerticesForSquare(OpenGL gl)
         {
             var vertices = new float[18];
@@ -131,6 +123,5 @@ namespace PrimordialEngine
             //  Unbind the vertex array, we've finished specifying data for it.
             vertexBufferArray.Unbind(gl);
         }
-
     }
 }
