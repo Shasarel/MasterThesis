@@ -33,8 +33,8 @@ namespace PrimordialEngine.OpenGLRenderer
             _openGLControl.RenderTrigger = RenderTrigger.TimerBased;
             _openGLControl.Size = new System.Drawing.Size(windowHeight, windowWidth);
             _openGLControl.TabIndex = 0;
-            _openGLControl.OpenGLInitialized += new EventHandler(OpenGLControlInitialized);
-            _openGLControl.OpenGLDraw += new RenderEventHandler(OpenGLControlDraw);
+            _openGLControl.OpenGLInitialized += OpenGLControlInitialized;
+            _openGLControl.OpenGLDraw += OpenGLControlDraw;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new System.Drawing.Size(windowHeight, windowWidth);

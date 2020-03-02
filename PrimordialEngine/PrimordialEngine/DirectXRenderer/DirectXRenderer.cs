@@ -72,7 +72,7 @@ namespace PrimordialEngine.DirectXRenderer
                         new D3D11.InputElement("COLOR", 0, Format.R32G32B32A32_Float, 16, 0)
                     });
 
-            _verticesBuffer = D3D11.Buffer.Create(_device, D3D11.BindFlags.VertexBuffer, primordialObject.VertexData);
+            _verticesBuffer = D3D11.Buffer.Create(_device, D3D11.BindFlags.VertexBuffer, _primordialObject.VertexData);
 
             _contantBuffer = new D3D11.Buffer(_device, Utilities.SizeOf<Matrix>(), D3D11.ResourceUsage.Default, D3D11.BindFlags.ConstantBuffer, D3D11.CpuAccessFlags.None, D3D11.ResourceOptionFlags.None, 0);
 
@@ -154,7 +154,7 @@ namespace PrimordialEngine.DirectXRenderer
 
             var time = _clock.ElapsedMilliseconds / 1000.0f;
 
-            _primordialObject.Position = new Vector3((float)Math.Cos(time * 2), (float)Math.Sin(time*2), (float)Math.Sin(time * 2)* (float)Math.Cos(time * 2));
+            //_primordialObject.Position = new Vector3((float)Math.Cos(time * 2), (float)Math.Sin(time*2), (float)Math.Sin(time * 2)* (float)Math.Cos(time * 2));
 
             _view = Matrix.LookAtLH(new Vector3(0, 0, -5), _primordialObject.Position, Vector3.UnitY);
              

@@ -57,10 +57,12 @@ namespace PrimordialEngine
                 },
                 Position = new Vector3(0.0f, 0.0f, 0.0f)
             };
-            //using var renderer = new OpenGLRenderer.OpenGLRenderer();
-            using var renderer = new DirectXRenderer.DirectXRenderer();
+            using var renderer = new OpenGLRenderer.OpenGLRenderer();
+            using var renderer2 = new DirectXRenderer.DirectXRenderer();
             renderer.Initialize(800,800, primordialObject);
             renderer.Start();
+            renderer2.Initialize(800,800, primordialObject);
+            renderer2.Start();
         }
     }
 }
