@@ -16,12 +16,13 @@ namespace PrimordialEngine.OpenGLRenderer
 
         private Action<OpenGL> _drawAction;
 
-        public OpenGLRenderingForm(Action<OpenGL, int, int> initializeAction, Action<OpenGL> drawAction, int windowHeight, int windowWidth)
+        public OpenGLRenderingForm(Action<OpenGL, int, int> initializeAction, Action<OpenGL> drawAction,int windowWidth, int windowHeight)
         {
             _initializeAction = initializeAction;
             _drawAction = drawAction;
 
             _openGLControl = new OpenGLControl();
+            _openGLControl.FrameRate = 1000;
             ((System.ComponentModel.ISupportInitialize)(_openGLControl)).BeginInit();
             SuspendLayout();
             _openGLControl.Dock = DockStyle.Fill;
@@ -31,14 +32,14 @@ namespace PrimordialEngine.OpenGLRenderer
             _openGLControl.OpenGLVersion = SharpGL.Version.OpenGLVersion.OpenGL4_4;
             _openGLControl.RenderContextType = RenderContextType.NativeWindow;
             _openGLControl.RenderTrigger = RenderTrigger.TimerBased;
-            _openGLControl.Size = new System.Drawing.Size(windowHeight, windowWidth);
+            _openGLControl.Size = new System.Drawing.Size(windowWidth, windowHeight);
             _openGLControl.TabIndex = 0;
             _openGLControl.OpenGLInitialized += OpenGLControlInitialized;
             _openGLControl.OpenGLDraw += OpenGLControlDraw;
-            AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(windowHeight, windowWidth);
+            ClientSize = new System.Drawing.Size(windowWidth, windowHeight);
             Controls.Add(_openGLControl);
+            KeyDown += new KeyEventHandler(KeyDownEventMethod);
             Name = "PrimordialEngine";
             Text = "PrimordialEngine";
             ((System.ComponentModel.ISupportInitialize)(_openGLControl)).EndInit();
@@ -52,6 +53,11 @@ namespace PrimordialEngine.OpenGLRenderer
         private void OpenGLControlDraw(object sender, RenderEventArgs args)
         {
             _drawAction.Invoke(_openGLControl.OpenGL);
+        }
+
+        private void KeyDownEventMethod(object sender, KeyEventArgs e)
+        {
+
         }
 
         protected override void Dispose(bool disposing)

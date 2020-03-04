@@ -35,9 +35,10 @@ namespace PrimordialEngine.DirectXRenderer
 
         public DirectXRenderer(){}
 
-        public void Initialize(int height, int width, PrimordialObject primordialObject)
+        public void Initialize(int width, int height, PrimordialObject primordialObject)
         {
             _form = new RenderForm("PrimordialEngine");
+            _form.ClientSize = new System.Drawing.Size(width, height);
 
             _primordialObject = primordialObject;
 
@@ -78,12 +79,12 @@ namespace PrimordialEngine.DirectXRenderer
 
             _context.InputAssembler.InputLayout = _inputLayout;
             _context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-            _context.InputAssembler.SetVertexBuffers(0, new D3D11.VertexBufferBinding(_verticesBuffer, Utilities.SizeOf<VertexData>(), 0));
+            _context.InputAssembler.SetVertexBuffers(0, new D3D11.VertexBufferBinding(_verticesBuffer, Utilities.SizeOf<VertexDataStruct>(), 0));
             _context.VertexShader.SetConstantBuffer(0, _contantBuffer);
             _context.VertexShader.Set(_vertexShader);
             _context.PixelShader.Set(_pixelShader);
 
-            _view = Matrix.LookAtLH(new Vector3(0, 0, -5), primordialObject.Position, Vector3.UnitY);
+            _view = Matrix.LookAtLH(new Vector3(0, 0, 0), _primordialObject.Position, Vector3.UnitY);
 
             _clock = new Stopwatch();
             _clock.Start();
@@ -156,16 +157,17 @@ namespace PrimordialEngine.DirectXRenderer
 
             //_primordialObject.Position = new Vector3((float)Math.Cos(time * 2), (float)Math.Sin(time*2), (float)Math.Sin(time * 2)* (float)Math.Cos(time * 2));
 
-            _view = Matrix.LookAtLH(new Vector3(0, 0, -5), _primordialObject.Position, Vector3.UnitY);
+            _view = Matrix.LookAtLH(new Vector3(0, 0, 0), new Vector3(0, 0, -1), Vector3.UnitY);
              
             var viewProj = Matrix.Multiply(_view, _proj);
 
             _context.ClearDepthStencilView(_depthView, D3D11.DepthStencilClearFlags.Depth, 1.0f, 0);
             _context.ClearRenderTargetView(_renderView, SharpDX.Color.Black);
 
-            var worldViewProj = Matrix.RotationX(time) * Matrix.RotationY(time * 1) * Matrix.RotationZ(time * .1f) * viewProj;
+            var worldViewProj = Matrix.RotationX(time) * Matrix.RotationY(time * .1f) * Matrix.RotationZ(time * .1f) * Matrix.Translation(_primordialObject.Position) * viewProj;
             worldViewProj.Transpose();
-            _context.UpdateSubresource(ref worldViewProj, _contantBuffer);
+            var a = worldViewProj.ToArray();
+            _context.UpdateSubresource(a, _contantBuffer);
 
             _context.Draw(_primordialObject.VertexData.Length, 0);
 

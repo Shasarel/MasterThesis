@@ -13,11 +13,8 @@ namespace PrimordialEngine.OpenGLRenderer
     public class OpenGLRenderer:IPrimordialRenderer
     {
 
-        private readonly Scene _scene = new Scene();
         private OpenGLRenderingForm _openGLRenderingForm;
-        mat4 _projectionMatrix;
-        mat4 _viewMatrix;
-        mat4 _modelMatrix;
+        Matrix _projectionMatrix;
         const uint attributeIndexPosition = 0;
         const uint attributeIndexColour = 1;
 
@@ -31,7 +28,7 @@ namespace PrimordialEngine.OpenGLRenderer
 
         private Stopwatch _stopwatch;
 
-        private void InitializeOpenGL(OpenGL gl, int height, int width)
+        private void InitializeOpenGL(OpenGL gl, int width, int height)
         {
             //  Set a blue clear colour.
             gl.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -45,20 +42,19 @@ namespace PrimordialEngine.OpenGLRenderer
             shaderProgram.BindAttributeLocation(gl, attributeIndexColour, "in_Color");
             shaderProgram.AssertValid(gl);
 
-            const float rads = (90.0f / 360.0f) * (float)Math.PI * 2.0f;
-            _projectionMatrix = glm.perspective(rads, width / (float)height, 0.1f, 100.0f);
-            _viewMatrix = glm.translate(new mat4(1.0f), new vec3(0.0f, 0.0f, -4.0f));
-
-            _modelMatrix = glm.scale(new mat4(1.0f), new vec3(1.0f));
+            const float rads = (60.0f / 360.0f) * (float)Math.PI * 2.0f;
+            _projectionMatrix = Matrix.PerspectiveFovLH(rads, width / (float)height, 0.1f, 100.0f);
 
             //  Now create the geometry for the square.
             CreateVerticesForSquare(gl);
-            _scene.Initialise(gl,width,height);
         }
 
         private void Draw(OpenGL gl)
         {
-            
+            if (_openGLRenderingForm)
+            {
+
+            }
             var time = _stopwatch.ElapsedMilliseconds / 1000.0f;
             System.Console.WriteLine((1/(time - lastTime)));
             lastTime = time;
@@ -66,19 +62,24 @@ namespace PrimordialEngine.OpenGLRenderer
             //  Clear the scene.
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT | OpenGL.GL_STENCIL_BUFFER_BIT);
 
-            var viewMatrix = _viewMatrix * glm.rotate(time, new vec3(0.0f, 0.0f, 1.0f)) * glm.rotate(time, new vec3(0.0f,1.0f, 0.0f)) * glm.rotate(time, new vec3(1.0f, 0.0f, 0.0f));;
+            double radians1 = (Math.PI / 180) * 10;
+            double radians2 = (Math.PI / 180) * -10;
+
+
+            var view = Matrix.LookAtLH(new Vector3(0.0f, 0.0f, 0.0f), new Vector3((float)Math.Sin(radians2), (float)Math.Sin(radians1), (float)Math.Cos(radians1)), Vector3.UnitY);
+
+            var viewProj = Matrix.Multiply(view, _projectionMatrix);
+            var worldViewProj = Matrix.RotationX(time) * Matrix.RotationY(time * .1f) * Matrix.RotationZ(time * .1f) * Matrix.Translation(_primordialObject.Position) * viewProj;
 
             //  Bind the shader, set the matrices.
             shaderProgram.Bind(gl);
-            shaderProgram.SetUniformMatrix4(gl, "projectionMatrix", _projectionMatrix.to_array());
-            shaderProgram.SetUniformMatrix4(gl, "viewMatrix", viewMatrix.to_array());
-            shaderProgram.SetUniformMatrix4(gl, "modelMatrix", _modelMatrix.to_array());
+            shaderProgram.SetUniformMatrix4(gl, "MVP_Matrix", worldViewProj.ToArray());
 
             //  Bind the out vertex array.
             vertexBufferArray.Bind(gl);
 
             //  Draw the square.
-            gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, _primordialObject.VertexDataFloat.Length/2);
+            gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, _primordialObject.VertexData.Length/2);
 
             //  Unbind our vertex array and shader.
             vertexBufferArray.Unbind(gl);
@@ -86,11 +87,11 @@ namespace PrimordialEngine.OpenGLRenderer
             
         }
 
-        public void Initialize(int height, int width, PrimordialObject primordialObject)
+        public void Initialize(int width, int height, PrimordialObject primordialObject)
         {
-            _primordialObject = primordialObject.ToVertexDataFloat();
+            _primordialObject = primordialObject;
             _stopwatch = Stopwatch.StartNew();
-            _openGLRenderingForm = new OpenGLRenderingForm(InitializeOpenGL, Draw, height, width);
+            _openGLRenderingForm = new OpenGLRenderingForm(InitializeOpenGL, Draw, width, height);
         }
 
         public void Start()
@@ -129,12 +130,12 @@ namespace PrimordialEngine.OpenGLRenderer
             var vertexDataBuffer = new VertexBuffer();
             vertexDataBuffer.Create(gl);
             vertexDataBuffer.Bind(gl);
-            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, _primordialObject.VertexDataFloat, OpenGL.GL_STATIC_DRAW);
-            gl.VertexAttribPointer(0, 4, OpenGL.GL_FLOAT, false, typeof(VertexData).GetFields().Length * 4 * sizeof(float), IntPtr.Zero);
+            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, _primordialObject.VertexData, OpenGL.GL_STATIC_DRAW);
+            gl.VertexAttribPointer(0, 4, OpenGL.GL_FLOAT, false, typeof(VertexDataStruct).GetFields().Length * 4 * sizeof(float), IntPtr.Zero);
             gl.EnableVertexAttribArray(0);
 
 
-            gl.VertexAttribPointer(1, 4, OpenGL.GL_FLOAT, false, typeof(VertexData).GetFields().Length * 4 * sizeof(float), IntPtr.Add(IntPtr.Zero, 4 * sizeof(float)));
+            gl.VertexAttribPointer(1, 4, OpenGL.GL_FLOAT, false, typeof(VertexDataStruct).GetFields().Length * 4 * sizeof(float), IntPtr.Add(IntPtr.Zero, 4 * sizeof(float)));
             gl.EnableVertexAttribArray(1);
             //colourDataBuffer.SetData(gl, 1, colors, false, 3);
 
