@@ -6,7 +6,7 @@ namespace PrimordialEngine.Interfaces
 {
     interface IPrimordialRenderer:IDisposable
     {
-        public void Initialize(int height, int width, PrimordialObject primordialObject);
+        public void Initialize(int height, int width, List<PrimordialObject> primordialObject);
         public void Start();
     }
 }

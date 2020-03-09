@@ -8,6 +8,8 @@ using D3D11 = SharpDX.Direct3D11;
 using System.Diagnostics;
 using System.Windows.Forms;
 using PrimordialEngine.Interfaces;
+using System.Collections.Generic;
+using System.Drawing;
 
 namespace PrimordialEngine.DirectXRenderer
 {
@@ -35,12 +37,21 @@ namespace PrimordialEngine.DirectXRenderer
 
         public DirectXRenderer(){}
 
-        public void Initialize(int width, int height, PrimordialObject primordialObject)
+        public void keyDown(object sender, KeyEventArgs args)
+        {
+            int a = 5;
+        }
+        public void Initialize(int width, int height, List<PrimordialObject> primordialObject)
         {
             _form = new RenderForm("PrimordialEngine");
+            var userControl = new UserControl();
+            userControl.Size = new Size(0,0);
+            userControl.KeyDown += keyDown;
+            //userControl.Hide();
+            _form.Controls.Add(userControl);
             _form.ClientSize = new System.Drawing.Size(width, height);
 
-            _primordialObject = primordialObject;
+            _primordialObject = primordialObject[0];
 
             _swapChainDescription = new SwapChainDescription()
             {
@@ -84,7 +95,7 @@ namespace PrimordialEngine.DirectXRenderer
             _context.VertexShader.Set(_vertexShader);
             _context.PixelShader.Set(_pixelShader);
 
-            _view = Matrix.LookAtLH(new Vector3(0, 0, 0), _primordialObject.Position, Vector3.UnitY);
+            _view = Matrix.LookAtLH(new Vector3(0, 0, 0), new Vector3(0,0,-5), Vector3.UnitY);
 
             _clock = new Stopwatch();
             _clock.Start();
@@ -175,24 +186,24 @@ namespace PrimordialEngine.DirectXRenderer
         }
         public void Dispose()
         {
-            _shaderSignature.Dispose();
-            _vertexShaderByteCode.Dispose();
-            _vertexShader.Dispose();
-            _pixelShaderByteCode.Dispose();
-            _pixelShader.Dispose();
-            _verticesBuffer.Dispose();
-            _inputLayout.Dispose();
-            _contantBuffer.Dispose();
-            _depthBuffer.Dispose();
-            _depthView.Dispose();
-            _context.ClearState();
-            _context.Flush();
-            _swapChain.Dispose();
-            _renderView.Dispose();
-            _backBuffer.Dispose();
-            _device.Dispose();
-            _context.Dispose();
-            _factory.Dispose();
+            _shaderSignature?.Dispose();
+            _vertexShaderByteCode?.Dispose();
+            _vertexShader?.Dispose();
+            _pixelShaderByteCode?.Dispose();
+            _pixelShader?.Dispose();
+            _verticesBuffer?.Dispose();
+            _inputLayout?.Dispose();
+            _contantBuffer?.Dispose();
+            _depthBuffer?.Dispose();
+            _depthView?.Dispose();
+            _context?.ClearState();
+            _context?.Flush();
+            _swapChain?.Dispose();
+            _renderView?.Dispose();
+            _backBuffer?.Dispose();
+            _device?.Dispose();
+            _context?.Dispose();
+            _factory?.Dispose();
         }
     }
 }

@@ -8,7 +8,7 @@ namespace PrimordialEngine.OpenGLRenderer
 {
     class OpenGLRenderingForm:Form
     {
-        private OpenGLControl _openGLControl;
+        public OpenGLControl _openGLControl;
 
         private System.ComponentModel.IContainer _components = null;
 
@@ -39,9 +39,9 @@ namespace PrimordialEngine.OpenGLRenderer
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new System.Drawing.Size(windowWidth, windowHeight);
             Controls.Add(_openGLControl);
-            KeyDown += new KeyEventHandler(KeyDownEventMethod);
             Name = "PrimordialEngine";
             Text = "PrimordialEngine";
+            FormBorderStyle = FormBorderStyle.None;
             ((System.ComponentModel.ISupportInitialize)(_openGLControl)).EndInit();
             ResumeLayout(false);
         }
@@ -54,12 +54,7 @@ namespace PrimordialEngine.OpenGLRenderer
         {
             _drawAction.Invoke(_openGLControl.OpenGL);
         }
-
-        private void KeyDownEventMethod(object sender, KeyEventArgs e)
-        {
-
-        }
-
+        
         protected override void Dispose(bool disposing)
         {
             if (disposing && (_components != null))

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Forms;
 using GlmNet;
@@ -10,23 +11,33 @@ using SharpGL.VertexBuffers;
 
 namespace PrimordialEngine.OpenGLRenderer
 {
-    public class OpenGLRenderer:IPrimordialRenderer
+    public class OpenGLRenderer : IPrimordialRenderer
     {
+        public struct poStruct{
+            public PrimordialObject _primordialObject;
+            public VertexBufferArray _vertexBufferArray;
+        }
 
         private OpenGLRenderingForm _openGLRenderingForm;
-        Matrix _projectionMatrix;
+        Camera camera;
         const uint attributeIndexPosition = 0;
         const uint attributeIndexColour = 1;
 
         private float lastTime = 0;
 
-        VertexBufferArray vertexBufferArray;
+        List<VertexBufferArray> _vertexBufferArray;
 
         private ShaderProgram shaderProgram;
 
-        private PrimordialObject _primordialObject;
+        private List<PrimordialObject> _primordialObject;
+
+        private List<poStruct> _poStructs;
 
         private Stopwatch _stopwatch;
+
+        private float mouseX, mouseY = 0;
+
+        private Keys key =Keys.Clear;
 
         private void InitializeOpenGL(OpenGL gl, int width, int height)
         {
@@ -41,57 +52,93 @@ namespace PrimordialEngine.OpenGLRenderer
             shaderProgram.BindAttributeLocation(gl, attributeIndexPosition, "in_Position");
             shaderProgram.BindAttributeLocation(gl, attributeIndexColour, "in_Color");
             shaderProgram.AssertValid(gl);
-
-            const float rads = (60.0f / 360.0f) * (float)Math.PI * 2.0f;
-            _projectionMatrix = Matrix.PerspectiveFovLH(rads, width / (float)height, 0.1f, 100.0f);
-
             //  Now create the geometry for the square.
-            CreateVerticesForSquare(gl);
+            _poStructs = new List<poStruct>();
+            foreach (var po in _primordialObject)
+            {
+                _poStructs.Add(new poStruct
+                {
+                    _vertexBufferArray = CreateVerticesForSquare(gl, po),
+                    _primordialObject = po
+                });
+            }
+
+        }
+
+        private void KeyDownMethod(object sender, KeyEventArgs args)
+        {
+            key = args.KeyCode;
+            if(args.KeyCode == Keys.Escape)
+            {
+                _openGLRenderingForm.Dispose();
+            }
+        }
+
+        private void KeyUpEvent(object sender, KeyEventArgs args)
+        {
+            key = Keys.Clear;
+        }
+
+        private void MouseMoveEvent(object sender, MouseEventArgs args)
+        {
+            var point = new System.Drawing.Point(_openGLRenderingForm.Location.X +(_openGLRenderingForm.Size.Width/2), _openGLRenderingForm.Location.Y +(_openGLRenderingForm.Size.Height / 2));
+            mouseX -= args.X - point.X + _openGLRenderingForm.Location.X;
+            mouseY -= args.Y - point.Y + _openGLRenderingForm.Location.Y;
+            camera.Pitch = mouseY * 0.001f;
+            camera.Yaw = mouseX * 0.001f;
         }
 
         private void Draw(OpenGL gl)
         {
-            if (_openGLRenderingForm)
-            {
-
-            }
+            var point = new System.Drawing.Point(_openGLRenderingForm.Location.X + (_openGLRenderingForm.Size.Width / 2), _openGLRenderingForm.Location.Y + (_openGLRenderingForm.Size.Height / 2));
+            Cursor.Position = point;
             var time = _stopwatch.ElapsedMilliseconds / 1000.0f;
-            System.Console.WriteLine((1/(time - lastTime)));
+            //System.Console.WriteLine((1/(time - lastTime)));
+            var dt = time - lastTime;
+
+            if (key == Keys.W)
+            {
+                camera.goForward(dt);
+            }
+
             lastTime = time;
             
             //  Clear the scene.
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT | OpenGL.GL_STENCIL_BUFFER_BIT);
 
-            double radians1 = (Math.PI / 180) * 10;
-            double radians2 = (Math.PI / 180) * -10;
-
-
-            var view = Matrix.LookAtLH(new Vector3(0.0f, 0.0f, 0.0f), new Vector3((float)Math.Sin(radians2), (float)Math.Sin(radians1), (float)Math.Cos(radians1)), Vector3.UnitY);
-
-            var viewProj = Matrix.Multiply(view, _projectionMatrix);
-            var worldViewProj = Matrix.RotationX(time) * Matrix.RotationY(time * .1f) * Matrix.RotationZ(time * .1f) * Matrix.Translation(_primordialObject.Position) * viewProj;
-
             //  Bind the shader, set the matrices.
             shaderProgram.Bind(gl);
-            shaderProgram.SetUniformMatrix4(gl, "MVP_Matrix", worldViewProj.ToArray());
+            foreach (var structt in _poStructs)
+            {
+                var worldViewProj = Matrix.RotationX(time) * Matrix.RotationY(time * .1f) * Matrix.RotationZ(time * .1f) * Matrix.Translation(structt._primordialObject.Position) * camera.ViewProjectionMatrix;
+                shaderProgram.SetUniformMatrix4(gl, "MVP_Matrix", worldViewProj.ToArray());
 
-            //  Bind the out vertex array.
-            vertexBufferArray.Bind(gl);
+                //  Bind the out vertex array.
+                structt._vertexBufferArray.Bind(gl);
 
-            //  Draw the square.
-            gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, _primordialObject.VertexData.Length/2);
+                //  Draw the square.
+                gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, structt._primordialObject.VertexData.Length / 2);
 
-            //  Unbind our vertex array and shader.
-            vertexBufferArray.Unbind(gl);
+                //  Unbind our vertex array and shader.
+                structt._vertexBufferArray.Unbind(gl);
+            }
+
             shaderProgram.Unbind(gl);
             
         }
 
-        public void Initialize(int width, int height, PrimordialObject primordialObject)
+        public void Initialize(int width, int height, List<PrimordialObject> primordialObject)
         {
             _primordialObject = primordialObject;
             _stopwatch = Stopwatch.StartNew();
             _openGLRenderingForm = new OpenGLRenderingForm(InitializeOpenGL, Draw, width, height);
+            camera = new Camera(60, width / (float)height);
+            _openGLRenderingForm._openGLControl.KeyDown += KeyDownMethod;
+            _openGLRenderingForm._openGLControl.MouseMove += MouseMoveEvent;
+            _openGLRenderingForm._openGLControl.KeyUp += KeyUpEvent;
+            var point = new System.Drawing.Point(_openGLRenderingForm._openGLControl.Location.X + (_openGLRenderingForm.Size.Width / 2), _openGLRenderingForm.Location.Y + (_openGLRenderingForm.Size.Height / 2));
+            Cursor.Position = point;
+            UserControl userControl = _openGLRenderingForm._openGLControl;
         }
 
         public void Start()
@@ -104,7 +151,7 @@ namespace PrimordialEngine.OpenGLRenderer
         {
             _openGLRenderingForm?.Dispose();
         }
-        private void CreateVerticesForSquare(OpenGL gl)
+        private VertexBufferArray CreateVerticesForSquare(OpenGL gl, PrimordialObject primordialObject)
         {
             var vertices = new float[18];
             var colors = new float[18]; // Colors for our vertices  
@@ -123,14 +170,14 @@ namespace PrimordialEngine.OpenGLRenderer
 
             
             //  Create the vertex array object.
-            vertexBufferArray = new VertexBufferArray();
+            var vertexBufferArray = new VertexBufferArray();
             vertexBufferArray.Create(gl);
             vertexBufferArray.Bind(gl);
 
             var vertexDataBuffer = new VertexBuffer();
             vertexDataBuffer.Create(gl);
             vertexDataBuffer.Bind(gl);
-            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, _primordialObject.VertexData, OpenGL.GL_STATIC_DRAW);
+            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, primordialObject.VertexData, OpenGL.GL_STATIC_DRAW);
             gl.VertexAttribPointer(0, 4, OpenGL.GL_FLOAT, false, typeof(VertexDataStruct).GetFields().Length * 4 * sizeof(float), IntPtr.Zero);
             gl.EnableVertexAttribArray(0);
 
@@ -141,6 +188,7 @@ namespace PrimordialEngine.OpenGLRenderer
 
             //  Unbind the vertex array, we've finished specifying data for it.
             vertexBufferArray.Unbind(gl);
+            return vertexBufferArray;
         }
     }
 }
