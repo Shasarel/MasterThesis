@@ -14,8 +14,13 @@ namespace PrimordialEngine
 
         public void SetVertexData(List<VertexDataStruct> vertexDataStructList)
         {
-            VertexData = new float[0];
-            vertexDataStructList.ForEach(x => VertexData = VertexData.Concat(x.ToArray()).ToArray()); ;
+            VertexData = new float[vertexDataStructList.Count * 3 * 4];
+            for (int i = 0; i < vertexDataStructList.Count; i++)
+            {
+                vertexDataStructList[i].Position.ToArray().CopyTo(VertexData, i * 12) ;
+                vertexDataStructList[i].Color.ToArray().CopyTo(VertexData, (i * 12) + 4);
+                vertexDataStructList[i].Normal.ToArray().CopyTo(VertexData, (i * 12) + 8);
+            }
         }
     }
 }

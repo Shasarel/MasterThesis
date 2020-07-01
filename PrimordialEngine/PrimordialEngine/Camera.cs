@@ -90,13 +90,13 @@ namespace PrimordialEngine
             _aspect = aspect;
             _pitch = _yaw = 0;
             _position = Vector3.Zero;
-            Speed = 100.0f;
+            Speed = 10.0f;
             UpdateProjectionMatrix();
         }
         private void UpdateProjectionMatrix()
         {
             float rads = (FieldOfView / 360.0f) * (float)Math.PI * 2.0f;
-            _projectionMatrix = Matrix.PerspectiveFovLH(rads, Aspect, 0.1f, 1000.0f);
+            _projectionMatrix = Matrix.PerspectiveFovLH(rads, Aspect, 0.1f, 2000.0f);
             UpdateViewProjectionMatrix();
         }
 
@@ -119,14 +119,14 @@ namespace PrimordialEngine
         }
         public void goBack(float dt)
         {
-            _position.Y -= Speed * (float)Math.Cos(_yaw) * dt;
+            _position.Z += Speed * (float)Math.Cos(_yaw) * dt;
             _position.X -= Speed * (float)Math.Sin(_yaw) * dt;
-            _position.Z += Speed * (float)Math.Cos(_pitch) * dt;
+            _position.Y += Speed * (float)Math.Sin(_pitch) * dt;
         }
         public void goLeft(float dt)
         {
-            _position.Y += Speed * (float)Math.Cos((_yaw - 90) / 180.0f * Math.PI) * dt;
-            _position.X += Speed * (float)Math.Sin((_yaw - 90) / 180.0f * Math.PI) * dt;
+            _position.Z -= Speed * (float)Math.Cos((_yaw - 90) / 180.0f * Math.PI) * dt;
+            _position.X -= Speed * (float)Math.Sin((_yaw - 90) / 180.0f * Math.PI) * dt;
         }
         public void goRight(float dt)
         {

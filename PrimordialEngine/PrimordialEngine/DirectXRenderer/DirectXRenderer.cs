@@ -34,22 +34,53 @@ namespace PrimordialEngine.DirectXRenderer
         private SwapChainDescription _swapChainDescription;
         private Matrix _view, _proj = Matrix.Identity;
         private PrimordialObject _primordialObject;
+        private float mouseX, mouseY = 0;
+        private Keys key = Keys.Clear;
+        Camera camera;
+        float lastTime = 0;
+        double avrTime =0;
+        int count =0;
 
         public DirectXRenderer(){}
 
         public void keyDown(object sender, KeyEventArgs args)
         {
-            int a = 5;
+            key = args.KeyCode;
+            if (args.KeyCode == Keys.Escape)
+            {
+                this.Dispose();
+            }
+        }
+        private void KeyUpEvent(object sender, KeyEventArgs args)
+        {
+            key = Keys.Clear;
+        }
+        public void mouseMove(object sender, MouseEventArgs args)
+        {
+            var point = new System.Drawing.Point(_form.Location.X + (_form.Size.Width / 2), _form.Location.Y + (_form.Size.Height / 2));
+            mouseX -= args.X - point.X + _form.Location.X;
+            mouseY -= args.Y - point.Y + _form.Location.Y;
+            //Console.WriteLine($"Mouse X:  {mouseX}, MouseY: {mouseY} CenterX: {point.X + _form.Location.X}, CenterY: {point.Y + _form.Location.Y}");
+            camera.Pitch = mouseY * 0.001f;
+            camera.Yaw = mouseX * 0.001f;
         }
         public void Initialize(int width, int height, List<PrimordialObject> primordialObject)
         {
+            _clock = new Stopwatch();
+            _clock.Start();
             _form = new RenderForm("PrimordialEngine");
+            camera = new Camera(60, width / (float)height);
+            _form.FormBorderStyle = FormBorderStyle.None;
+            _form.MouseMove +=mouseMove;
             var userControl = new UserControl();
             userControl.Size = new Size(0,0);
             userControl.KeyDown += keyDown;
-            //userControl.Hide();
+            userControl.MouseMove += mouseMove;
+            userControl.KeyUp += KeyUpEvent;
             _form.Controls.Add(userControl);
             _form.ClientSize = new System.Drawing.Size(width, height);
+            var point = new System.Drawing.Point(_form.Location.X + (_form.Size.Width / 2), _form.Location.Y + (_form.Size.Height / 2));
+            Cursor.Position = point;
 
             _primordialObject = primordialObject[0];
 
@@ -69,12 +100,14 @@ namespace PrimordialEngine.DirectXRenderer
 
             _factory = _swapChain.GetParent<Factory>();
             _factory.MakeWindowAssociation(_form.Handle, WindowAssociationFlags.IgnoreAll);
-
+            var shaderTime = _clock.ElapsedMilliseconds;
             _vertexShaderByteCode = ShaderBytecode.CompileFromFile("DirectXRenderer\\MiniCube.hlsl", "VS", "vs_4_0");
             _vertexShader = new D3D11.VertexShader(_device, _vertexShaderByteCode);
 
             _pixelShaderByteCode = ShaderBytecode.CompileFromFile("DirectXRenderer\\MiniCube.hlsl", "PS", "ps_4_0");
             _pixelShader = new D3D11.PixelShader(_device, _pixelShaderByteCode);
+
+            Console.WriteLine(_clock.ElapsedMilliseconds - shaderTime);
 
             _shaderSignature = ShaderSignature.GetInputSignature(_vertexShaderByteCode);
 
@@ -96,9 +129,6 @@ namespace PrimordialEngine.DirectXRenderer
             _context.PixelShader.Set(_pixelShader);
 
             _view = Matrix.LookAtLH(new Vector3(0, 0, 0), new Vector3(0,0,-5), Vector3.UnitY);
-
-            _clock = new Stopwatch();
-            _clock.Start();
 
             _backBuffer = null;
             _renderView = null;
@@ -155,34 +185,58 @@ namespace PrimordialEngine.DirectXRenderer
                 _depthView = new D3D11.DepthStencilView(_device, _depthBuffer);
 
                 _context.Rasterizer.SetViewport(new Viewport(0, 0, _form.ClientSize.Width, _form.ClientSize.Height, 0.0f, 1.0f));
+                _context.Rasterizer.State = new D3D11.RasterizerState(_device, new D3D11.RasterizerStateDescription
+                {
+                    FillMode = D3D11.FillMode.Wireframe,
+                    CullMode = D3D11.CullMode.None,
+                    IsFrontCounterClockwise = false,
+
+
+                });
                 _context.OutputMerger.SetTargets(_depthView, _renderView);
 
                 const float rads = (60.0f / 360.0f) * (float)Math.PI * 2.0f;
 
-                _proj = Matrix.PerspectiveFovLH(rads, _form.ClientSize.Width / (float)_form.ClientSize.Height, 0.1f, 100.0f);
-
+                _proj = Matrix.PerspectiveFovLH(rads, _form.ClientSize.Width / (float)_form.ClientSize.Height, 0.1f, 1000.0f);
                 _userResized = false;
             }
 
             var time = _clock.ElapsedMilliseconds / 1000.0f;
+            var dt = time - lastTime;
+
+            if (key == Keys.W)
+            {
+                camera.goForward(dt);
+            }
+
+            if (key == Keys.S)
+            {
+                camera.goBack(dt);
+            }
+            lastTime = time;
+            var point = new System.Drawing.Point(_form.Location.X + (_form.Size.Width / 2), _form.Location.Y + (_form.Size.Height / 2));
+            Cursor.Position = point;
+
+
+            var worldViewProj = Matrix.RotationX(time) * Matrix.RotationY(time * .1f) * Matrix.RotationZ(time * .1f) * Matrix.Translation(_primordialObject.Position) * camera.ViewProjectionMatrix;
+
+            worldViewProj.Transpose();
+            var MVPMatrix = worldViewProj.ToArray();
 
             //_primordialObject.Position = new Vector3((float)Math.Cos(time * 2), (float)Math.Sin(time*2), (float)Math.Sin(time * 2)* (float)Math.Cos(time * 2));
-
-            _view = Matrix.LookAtLH(new Vector3(0, 0, 0), new Vector3(0, 0, -1), Vector3.UnitY);
-             
-            var viewProj = Matrix.Multiply(_view, _proj);
-
+            var renderTime = _clock.ElapsedMilliseconds;
             _context.ClearDepthStencilView(_depthView, D3D11.DepthStencilClearFlags.Depth, 1.0f, 0);
             _context.ClearRenderTargetView(_renderView, SharpDX.Color.Black);
 
-            var worldViewProj = Matrix.RotationX(time) * Matrix.RotationY(time * .1f) * Matrix.RotationZ(time * .1f) * Matrix.Translation(_primordialObject.Position) * viewProj;
-            worldViewProj.Transpose();
-            var a = worldViewProj.ToArray();
-            _context.UpdateSubresource(a, _contantBuffer);
+            _context.UpdateSubresource(MVPMatrix, _contantBuffer);
 
             _context.Draw(_primordialObject.VertexData.Length, 0);
 
             _swapChain.Present(0, PresentFlags.None);
+            avrTime += (_clock.ElapsedMilliseconds - renderTime);
+            count++;
+            if(count == 100)
+             Console.WriteLine(avrTime/count);
         }
         public void Dispose()
         {
