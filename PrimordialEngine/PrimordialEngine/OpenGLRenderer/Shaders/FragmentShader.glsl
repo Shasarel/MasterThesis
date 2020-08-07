@@ -7,11 +7,11 @@ uniform vec3 viewPos;
 
 void main(void) {
 	float specularStrength = 1;
-	float diffuseStrength = 0.6;
-    vec3 lightColor = vec3(0.0, 1.0, 1.0);
+	float diffuseStrength = 0.7;
+    vec3 lightColor = vec3(1.0, 1.0, 1.0);
 	vec3 lightPos = vec3(500,700,-1000);
 	vec3 lightDir = normalize(lightPos - fragment_Pos);
-	float ambientStrenght = 0.05;
+	float ambientStrenght = 0.2;
 	vec3 ambient = ambientStrenght * lightColor;
 	float diff = max(dot(pass_Normal, lightDir), 0.0);
 	vec3 diffuse = diffuseStrength * diff * lightColor;

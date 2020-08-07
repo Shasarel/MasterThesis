@@ -140,7 +140,7 @@ namespace PrimordialEngine.OpenGLRenderer
             foreach (var structt in _poStructs)
             {
               
-                var modelMatrix = Matrix.RotationX(time *0) * Matrix.RotationY(time *0) * Matrix.RotationZ(time *0) * Matrix.Translation(structt._primordialObject.Position);
+                var modelMatrix = Matrix.RotationX(time *1f) * Matrix.RotationY(time *1f) * Matrix.RotationZ(time *1f) * Matrix.Translation(structt._primordialObject.Position);
                 var worldViewProj = modelMatrix * camera.ViewProjectionMatrix;
                 shaderProgram.SetUniformMatrix4(gl, "MVP_Matrix", worldViewProj.ToArray());
                 shaderProgram.SetUniformMatrix4(gl, "model_Matrix", modelMatrix.ToArray());

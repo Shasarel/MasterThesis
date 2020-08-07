@@ -10,6 +10,8 @@ using System.Windows.Forms;
 using PrimordialEngine.Interfaces;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Numerics;
+using Vector3 = SharpDX.Vector3;
 
 namespace PrimordialEngine.DirectXRenderer
 {
@@ -25,7 +27,7 @@ namespace PrimordialEngine.DirectXRenderer
         private ShaderBytecode _vertexShaderByteCode, _pixelShaderByteCode;
         private ShaderSignature _shaderSignature;
         private D3D11.InputLayout _inputLayout;
-        private D3D11.Buffer _verticesBuffer, _contantBuffer;
+        private D3D11.Buffer _verticesBuffer, _contantBuffer, _contantBuffer2, _contantBuffer3;
         private Stopwatch _clock;
         private D3D11.Texture2D _depthBuffer, _backBuffer;
         private D3D11.RenderTargetView _renderView;
@@ -48,7 +50,7 @@ namespace PrimordialEngine.DirectXRenderer
             key = args.KeyCode;
             if (args.KeyCode == Keys.Escape)
             {
-                this.Dispose();
+                _form.Close();
             }
         }
         private void KeyUpEvent(object sender, KeyEventArgs args)
@@ -114,17 +116,21 @@ namespace PrimordialEngine.DirectXRenderer
             _inputLayout = new D3D11.InputLayout(_device, _shaderSignature, new[]
                     {
                         new D3D11.InputElement("POSITION", 0, Format.R32G32B32A32_Float, 0, 0),
-                        new D3D11.InputElement("COLOR", 0, Format.R32G32B32A32_Float, 16, 0)
+                        new D3D11.InputElement("COLOR", 0, Format.R32G32B32A32_Float, 16, 0),
+                        new D3D11.InputElement("NORMAL", 0, Format.R32G32B32A32_Float, 32, 0)
                     });
 
             _verticesBuffer = D3D11.Buffer.Create(_device, D3D11.BindFlags.VertexBuffer, _primordialObject.VertexData);
 
             _contantBuffer = new D3D11.Buffer(_device, Utilities.SizeOf<Matrix>(), D3D11.ResourceUsage.Default, D3D11.BindFlags.ConstantBuffer, D3D11.CpuAccessFlags.None, D3D11.ResourceOptionFlags.None, 0);
-
+            _contantBuffer2 = new D3D11.Buffer(_device, Utilities.SizeOf<Matrix>(), D3D11.ResourceUsage.Default, D3D11.BindFlags.ConstantBuffer, D3D11.CpuAccessFlags.None, D3D11.ResourceOptionFlags.None, 0);
+            _contantBuffer3 = new D3D11.Buffer(_device, Utilities.SizeOf<Matrix>(), D3D11.ResourceUsage.Default, D3D11.BindFlags.ConstantBuffer, D3D11.CpuAccessFlags.None, D3D11.ResourceOptionFlags.None, 0);
             _context.InputAssembler.InputLayout = _inputLayout;
             _context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
             _context.InputAssembler.SetVertexBuffers(0, new D3D11.VertexBufferBinding(_verticesBuffer, Utilities.SizeOf<VertexDataStruct>(), 0));
             _context.VertexShader.SetConstantBuffer(0, _contantBuffer);
+            _context.VertexShader.SetConstantBuffer(1, _contantBuffer2);
+            _context.VertexShader.SetConstantBuffer(2, _contantBuffer3);
             _context.VertexShader.Set(_vertexShader);
             _context.PixelShader.Set(_pixelShader);
 
@@ -143,8 +149,8 @@ namespace PrimordialEngine.DirectXRenderer
                     _swapChain.SetFullscreenState(true, null);
                 else if (args.KeyCode == Keys.F4)
                     _swapChain.SetFullscreenState(false, null);
-                else if (args.KeyCode == Keys.Escape)
-                    _form.Close();
+                //else if (args.KeyCode == Keys.Escape)
+                   // _form.Close();
             };
         }
 
@@ -187,7 +193,7 @@ namespace PrimordialEngine.DirectXRenderer
                 _context.Rasterizer.SetViewport(new Viewport(0, 0, _form.ClientSize.Width, _form.ClientSize.Height, 0.0f, 1.0f));
                 _context.Rasterizer.State = new D3D11.RasterizerState(_device, new D3D11.RasterizerStateDescription
                 {
-                    FillMode = D3D11.FillMode.Wireframe,
+                    FillMode = D3D11.FillMode.Solid,
                     CullMode = D3D11.CullMode.None,
                     IsFrontCounterClockwise = false,
 
@@ -218,10 +224,19 @@ namespace PrimordialEngine.DirectXRenderer
             Cursor.Position = point;
 
 
-            var worldViewProj = Matrix.RotationX(time) * Matrix.RotationY(time * .1f) * Matrix.RotationZ(time * .1f) * Matrix.Translation(_primordialObject.Position) * camera.ViewProjectionMatrix;
+            var modelMatrix = Matrix.RotationX(time) * Matrix.RotationY(time) * Matrix.RotationZ(time) * Matrix.Translation(_primordialObject.Position);
 
+
+            var worldViewProj = modelMatrix *camera.ViewProjectionMatrix;
+            modelMatrix.Transpose();
             worldViewProj.Transpose();
+            var modelMatrixArray = modelMatrix.ToArray();
             var MVPMatrix = worldViewProj.ToArray();
+
+            var modelInverse = modelMatrix;
+            modelInverse.Invert();
+            //modelInverse.Transpose();
+
 
             //_primordialObject.Position = new Vector3((float)Math.Cos(time * 2), (float)Math.Sin(time*2), (float)Math.Sin(time * 2)* (float)Math.Cos(time * 2));
             var renderTime = _clock.ElapsedMilliseconds;
@@ -229,6 +244,8 @@ namespace PrimordialEngine.DirectXRenderer
             _context.ClearRenderTargetView(_renderView, SharpDX.Color.Black);
 
             _context.UpdateSubresource(MVPMatrix, _contantBuffer);
+            _context.UpdateSubresource(modelMatrixArray, _contantBuffer2);
+            _context.UpdateSubresource(modelInverse.ToArray(), _contantBuffer3);
 
             _context.Draw(_primordialObject.VertexData.Length, 0);
 
