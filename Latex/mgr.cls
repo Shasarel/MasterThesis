@@ -237,7 +237,7 @@
 %definicje danych do utworzenia strony tyuL?owej
 \if@pl
 \newcommand{\@naglowek}{PRACA DYPLOMOWA \\ MAGISTERSKA}
-\newcommand{\@napisProwadzacy}{Prowadz\k{a}cy prac\k{e}:}
+\newcommand{\@napisProwadzacy}{Opiekun pracy:}
 \newcommand{\@napisOcena}{Ocena pracy:}
 \fi
 \if@en
@@ -504,7 +504,7 @@
 \large \@title
 \fi
 \vfil
-\@authortext\\
+\@authortext
 \large \@author
 \vfil\mbox{}
 \end{center}
@@ -524,7 +524,6 @@
 {\large \@supervisor}\\
 \vfill
 \@guardian %tego nie ma jeLzeli nie jest zdefiniowane, a nie powinno siÄ? definiowaÄ? jeLzeli prowadzÄ?cy i opiekun to ta sama osoba
-{\Large\sc \@napisOcena\\[20mm]}
 \vfill\mbox{}
 \end{minipage}}
 \end{minipage}}

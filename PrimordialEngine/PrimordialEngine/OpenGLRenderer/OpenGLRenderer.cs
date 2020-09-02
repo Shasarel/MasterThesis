@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using GlmNet;
 using PrimordialEngine.Interfaces;
@@ -38,26 +40,34 @@ namespace PrimordialEngine.OpenGLRenderer
 
         private float mouseX, mouseY = 0;
 
+        long frameTime = 0;
+        int timeCount = 0;
+        string fileTitle = "";
+
         private Keys key =Keys.Clear;
-
-        long allCount, drawCount = 0;
-
-        long avrAll, avrDraw = 0;
+        VertexBuffer vertexDataBuffer;
+        VertexBufferArray vertexBufferArray;
+        OpenGL gl;
 
         private void InitializeOpenGL(OpenGL gl, int width, int height)
         {
             //  Set a blue clear colour.
+            this.gl = gl;
             gl.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-            gl.PolygonMode(SharpGL.Enumerations.FaceMode.FrontAndBack, SharpGL.Enumerations.PolygonMode.Filled);
+            gl.PolygonMode(SharpGL.Enumerations.FaceMode.Front, SharpGL.Enumerations.PolygonMode.Lines);
+            gl.Enable(OpenGL.GL_CULL_FACE);
+            gl.CullFace(OpenGL.GL_BACK);
 
             //  Create the shader program.
-            var vertexShaderSource = ManifestResourceLoader.LoadTextFile("OpenGLRenderer\\Shaders\\VertexShader.glsl");
-            var fragmentShaderSource = ManifestResourceLoader.LoadTextFile("OpenGLRenderer\\Shaders\\FragmentShader.glsl");
+            var vertexShaderSource = ManifestResourceLoader.LoadTextFile("OpenGLRenderer\\Shaders\\VertexShader - Copy.glsl");
+            var fragmentShaderSource = ManifestResourceLoader.LoadTextFile("OpenGLRenderer\\Shaders\\FragmentShader - Copy.glsl");
 
-            shaderProgram = new ShaderProgram();
-            var shaderTime = _stopwatch.ElapsedMilliseconds;
-            shaderProgram.Create(gl, vertexShaderSource, fragmentShaderSource, null);
-            Console.WriteLine(_stopwatch.ElapsedMilliseconds - shaderTime);
+            //for(int i = 0; i<100; i++) {
+                shaderProgram = new ShaderProgram();
+                //var shaderTime = _stopwatch.ElapsedMilliseconds;
+                shaderProgram.Create(gl, vertexShaderSource, fragmentShaderSource, null);
+                //File.AppendAllText("shader" + ".txt", (_stopwatch.ElapsedMilliseconds - shaderTime).ToString() + "\n");
+            //}
 
             shaderProgram.BindAttributeLocation(gl, attributeIndexPosition, "in_Position");
             shaderProgram.BindAttributeLocation(gl, attributeIndexColour, "in_Color");
@@ -95,20 +105,28 @@ namespace PrimordialEngine.OpenGLRenderer
             var point = new System.Drawing.Point(_openGLRenderingForm.Location.X +(_openGLRenderingForm.Size.Width/2), _openGLRenderingForm.Location.Y +(_openGLRenderingForm.Size.Height / 2));
             mouseX -= args.X - point.X + _openGLRenderingForm.Location.X;
             mouseY -= args.Y - point.Y + _openGLRenderingForm.Location.Y;
-            camera.Pitch = mouseY * 0.001f;
-            camera.Yaw = mouseX * 0.001f;
+            //camera.Pitch = mouseY * 0.001f;
+            //camera.Yaw = mouseX * 0.001f;
         }
 
         private void Draw(OpenGL gl)
-        { 
-            var xTime = _stopwatch.ElapsedMilliseconds - avrAll;
-            if (xTime > 10 && avrAll!=0) {
-                avrDraw+=xTime;
-                drawCount++;
-                //Console.WriteLine((avrDraw/drawCount));
+        {
+            var elapsedTime=_stopwatch.ElapsedMilliseconds - frameTime;
+            if (frameTime != 0 && elapsedTime>15)
+            {
+                File.AppendAllText(fileTitle + ".txt", elapsedTime.ToString() + "\n");
+                timeCount++;
             }
+           // if(timeCount >1)
+           // {
+            //    _openGLRenderingForm.Dispose();
+          //  }
+            if(_stopwatch.ElapsedMilliseconds / 1000 > 100)
+            {
+                //_openGLRenderingForm.Dispose();
+           }
             var point = new System.Drawing.Point(_openGLRenderingForm.Location.X + (_openGLRenderingForm.Size.Width / 2), _openGLRenderingForm.Location.Y + (_openGLRenderingForm.Size.Height / 2));
-            Cursor.Position = point;
+           // Cursor.Position = point;
             var time = _stopwatch.ElapsedMilliseconds / 1000.0f;
             //System.Console.WriteLine((1/(time - lastTime)));
             var dt = time - lastTime;
@@ -154,11 +172,12 @@ namespace PrimordialEngine.OpenGLRenderer
             }
 
             shaderProgram.Unbind(gl);
-            avrAll = _stopwatch.ElapsedMilliseconds;
+            frameTime = _stopwatch.ElapsedMilliseconds;
         }
 
-        public void Initialize(int width, int height, List<PrimordialObject> primordialObject)
+        public void Initialize(int width, int height, List<PrimordialObject> primordialObject, string fileTitle)
         {
+            this.fileTitle = fileTitle;
             _primordialObject = primordialObject;
             _stopwatch = Stopwatch.StartNew();
             _openGLRenderingForm = new OpenGLRenderingForm(InitializeOpenGL, Draw, width, height);
@@ -180,18 +199,26 @@ namespace PrimordialEngine.OpenGLRenderer
 
         public void Dispose()
         {
+            vertexBufferArray.Bind(gl);
+            gl.DeleteBuffers(1, new uint[]{ vertexDataBuffer.VertexBufferObject});
+            vertexBufferArray.Unbind(gl);
+            vertexBufferArray.Delete(gl);
             _openGLRenderingForm?.Dispose();
         }
         private VertexBufferArray CreateVertexBufferArray(OpenGL gl, PrimordialObject primordialObject)
         {
-            var vertexBufferArray = new VertexBufferArray();
+            vertexBufferArray = new VertexBufferArray();
             vertexBufferArray.Create(gl);
             vertexBufferArray.Bind(gl);
 
-            var vertexDataBuffer = new VertexBuffer();
+            vertexDataBuffer = new VertexBuffer();
             vertexDataBuffer.Create(gl);
             vertexDataBuffer.Bind(gl);
-            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, primordialObject.VertexData, OpenGL.GL_STATIC_DRAW);
+          //  for(int i = 0; i<100; i++) {
+              //  var sendDataTime = _stopwatch.ElapsedMilliseconds;
+                gl.BufferData(OpenGL.GL_ARRAY_BUFFER, primordialObject.VertexData, OpenGL.GL_STATIC_DRAW);
+              //  File.AppendAllText(fileTitle + "Data.txt", (_stopwatch.ElapsedMilliseconds - sendDataTime).ToString() + "\n");
+           // }
             gl.VertexAttribPointer(attributeIndexPosition, 4, OpenGL.GL_FLOAT, false, 3 * 4 * sizeof(float), IntPtr.Zero);
             gl.EnableVertexAttribArray(0);
 
@@ -201,7 +228,7 @@ namespace PrimordialEngine.OpenGLRenderer
 
             gl.VertexAttribPointer(attributeIndexNormal, 4, OpenGL.GL_FLOAT, false, 3* 4 * sizeof(float), IntPtr.Add(IntPtr.Zero, 8 * sizeof(float)));
             gl.EnableVertexAttribArray(2);
-
+            vertexDataBuffer.Unbind(gl);
             vertexBufferArray.Unbind(gl);
             return vertexBufferArray;
         }

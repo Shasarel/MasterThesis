@@ -21,7 +21,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="DirectXRenderer\MiniCube - Copy.hlsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="DirectXRenderer\MiniCube.hlsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="DirectXRenderer\MiniCubeNoFrag.hlsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="DirectXRenderer\MiniCubeNoShader.hlsl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="FragmentShader.glsl">
@@ -30,7 +39,13 @@
     <None Update="MiniCube.hlsl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="OpenGLRenderer\Shaders\FragmentShader - Copy.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="OpenGLRenderer\Shaders\FragmentShader.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="OpenGLRenderer\Shaders\VertexShader - Copy.glsl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="OpenGLRenderer\Shaders\VertexShader.glsl">

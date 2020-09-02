@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
 using Vector3 = SharpDX.Vector3;
+using System.IO;
 
 namespace PrimordialEngine.DirectXRenderer
 {
@@ -42,6 +43,7 @@ namespace PrimordialEngine.DirectXRenderer
         float lastTime = 0;
         double avrTime =0;
         int count =0;
+        string fileTitle;
 
         public DirectXRenderer(){}
 
@@ -63,26 +65,29 @@ namespace PrimordialEngine.DirectXRenderer
             mouseX -= args.X - point.X + _form.Location.X;
             mouseY -= args.Y - point.Y + _form.Location.Y;
             //Console.WriteLine($"Mouse X:  {mouseX}, MouseY: {mouseY} CenterX: {point.X + _form.Location.X}, CenterY: {point.Y + _form.Location.Y}");
-            camera.Pitch = mouseY * 0.001f;
-            camera.Yaw = mouseX * 0.001f;
+            //camera.Pitch = mouseY * 0.001f;
+            //camera.Yaw = mouseX * 0.001f;
         }
-        public void Initialize(int width, int height, List<PrimordialObject> primordialObject)
+        public void Initialize(int width, int height, List<PrimordialObject> primordialObject, string fileTitle)
         {
+            this.fileTitle = fileTitle;
             _clock = new Stopwatch();
             _clock.Start();
             _form = new RenderForm("PrimordialEngine");
-            camera = new Camera(60, width / (float)height);
             _form.FormBorderStyle = FormBorderStyle.None;
             _form.MouseMove +=mouseMove;
             var userControl = new UserControl();
+            _form.Controls.Add(userControl);
+            _form.ClientSize = new System.Drawing.Size(width, height);
+            camera = new Camera(60, width / (float)height);
+
             userControl.Size = new Size(0,0);
             userControl.KeyDown += keyDown;
             userControl.MouseMove += mouseMove;
             userControl.KeyUp += KeyUpEvent;
-            _form.Controls.Add(userControl);
-            _form.ClientSize = new System.Drawing.Size(width, height);
+
             var point = new System.Drawing.Point(_form.Location.X + (_form.Size.Width / 2), _form.Location.Y + (_form.Size.Height / 2));
-            Cursor.Position = point;
+            //Cursor.Position = point;
 
             _primordialObject = primordialObject[0];
 
@@ -97,20 +102,31 @@ namespace PrimordialEngine.DirectXRenderer
                 Usage = Usage.RenderTargetOutput
             };
 
-            D3D11.Device.CreateWithSwapChain(DriverType.Hardware, D3D11.DeviceCreationFlags.None, _swapChainDescription, out _device, out _swapChain);
+
+        D3D11.Device.CreateWithSwapChain(DriverType.Hardware, D3D11.DeviceCreationFlags.None, _swapChainDescription, out _device, out _swapChain);
             _context = _device.ImmediateContext;
 
             _factory = _swapChain.GetParent<Factory>();
             _factory.MakeWindowAssociation(_form.Handle, WindowAssociationFlags.IgnoreAll);
-            var shaderTime = _clock.ElapsedMilliseconds;
-            _vertexShaderByteCode = ShaderBytecode.CompileFromFile("DirectXRenderer\\MiniCube.hlsl", "VS", "vs_4_0");
-            _vertexShader = new D3D11.VertexShader(_device, _vertexShaderByteCode);
 
-            _pixelShaderByteCode = ShaderBytecode.CompileFromFile("DirectXRenderer\\MiniCube.hlsl", "PS", "ps_4_0");
-            _pixelShader = new D3D11.PixelShader(_device, _pixelShaderByteCode);
 
-            Console.WriteLine(_clock.ElapsedMilliseconds - shaderTime);
+            var shaderName = "DirectXRenderer\\MiniCube.hlsl";
+            //var shaderName = @"DirectXRenderer\MiniCubeNoFrag.hlsl";
+            //var shaderName = "DirectXRenderer\\MiniCubeNoShader.hlsl";
+            //for(int i = 0; i < 100; i++) {
+                //var shaderTime = _clock.ElapsedMilliseconds;
+                _vertexShaderByteCode = ShaderBytecode.CompileFromFile(shaderName, "VS", "vs_4_0");
+                _vertexShader = new D3D11.VertexShader(_device, _vertexShaderByteCode);
 
+                _pixelShaderByteCode = ShaderBytecode.CompileFromFile(shaderName, "PS", "ps_4_0");
+                _pixelShader = new D3D11.PixelShader(_device, _pixelShaderByteCode);
+
+               // File.AppendAllText(fileTitle + "Shader.txt", (_clock.ElapsedMilliseconds - shaderTime).ToString() + "\n");
+               // _vertexShaderByteCode?.Dispose();
+                //_vertexShader?.Dispose();
+               // _pixelShaderByteCode?.Dispose();
+               // _pixelShader?.Dispose();
+            //}
             _shaderSignature = ShaderSignature.GetInputSignature(_vertexShaderByteCode);
 
             _inputLayout = new D3D11.InputLayout(_device, _shaderSignature, new[]
@@ -120,8 +136,13 @@ namespace PrimordialEngine.DirectXRenderer
                         new D3D11.InputElement("NORMAL", 0, Format.R32G32B32A32_Float, 32, 0)
                     });
 
-            _verticesBuffer = D3D11.Buffer.Create(_device, D3D11.BindFlags.VertexBuffer, _primordialObject.VertexData);
-
+          //   for(int i = 0; i<100; i++) {
+             //   var sendDataTime = _clock.ElapsedMilliseconds;
+                _verticesBuffer = D3D11.Buffer.Create(_device, D3D11.BindFlags.VertexBuffer, _primordialObject.VertexData);
+              //  File.AppendAllText(fileTitle + "Data.txt", (_clock.ElapsedMilliseconds - sendDataTime).ToString() + "\n");
+              //  _verticesBuffer?.Dispose();
+             //  _verticesBuffer = null;
+           // }
             _contantBuffer = new D3D11.Buffer(_device, Utilities.SizeOf<Matrix>(), D3D11.ResourceUsage.Default, D3D11.BindFlags.ConstantBuffer, D3D11.CpuAccessFlags.None, D3D11.ResourceOptionFlags.None, 0);
             _contantBuffer2 = new D3D11.Buffer(_device, Utilities.SizeOf<Matrix>(), D3D11.ResourceUsage.Default, D3D11.BindFlags.ConstantBuffer, D3D11.CpuAccessFlags.None, D3D11.ResourceOptionFlags.None, 0);
             _contantBuffer3 = new D3D11.Buffer(_device, Utilities.SizeOf<Matrix>(), D3D11.ResourceUsage.Default, D3D11.BindFlags.ConstantBuffer, D3D11.CpuAccessFlags.None, D3D11.ResourceOptionFlags.None, 0);
@@ -194,7 +215,7 @@ namespace PrimordialEngine.DirectXRenderer
                 _context.Rasterizer.State = new D3D11.RasterizerState(_device, new D3D11.RasterizerStateDescription
                 {
                     FillMode = D3D11.FillMode.Solid,
-                    CullMode = D3D11.CullMode.None,
+                    CullMode = D3D11.CullMode.Front,
                     IsFrontCounterClockwise = false,
 
 
@@ -221,7 +242,7 @@ namespace PrimordialEngine.DirectXRenderer
             }
             lastTime = time;
             var point = new System.Drawing.Point(_form.Location.X + (_form.Size.Width / 2), _form.Location.Y + (_form.Size.Height / 2));
-            Cursor.Position = point;
+            //Cursor.Position = point;
 
 
             var modelMatrix = Matrix.RotationX(time) * Matrix.RotationY(time) * Matrix.RotationZ(time) * Matrix.Translation(_primordialObject.Position);
@@ -247,13 +268,20 @@ namespace PrimordialEngine.DirectXRenderer
             _context.UpdateSubresource(modelMatrixArray, _contantBuffer2);
             _context.UpdateSubresource(modelInverse.ToArray(), _contantBuffer3);
 
+            var frameTime = _clock.ElapsedMilliseconds;
+
             _context.Draw(_primordialObject.VertexData.Length, 0);
 
             _swapChain.Present(0, PresentFlags.None);
-            avrTime += (_clock.ElapsedMilliseconds - renderTime);
-            count++;
-            if(count == 100)
-             Console.WriteLine(avrTime/count);
+            if((_clock.ElapsedMilliseconds - frameTime) > 15) {
+                File.AppendAllText(fileTitle + ".txt", (_clock.ElapsedMilliseconds - frameTime).ToString() + "\n");
+                count++; 
+                }
+           // if(count > 1)
+                //_form.Close();
+            if (_clock.Elapsed.TotalSeconds > 105) { 
+               // _form.Close();
+            }
         }
         public void Dispose()
         {

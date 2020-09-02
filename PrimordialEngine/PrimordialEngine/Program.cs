@@ -74,21 +74,20 @@ namespace PrimordialEngine
              }*/
             var primordialObject = new PrimordialObject
             {
-                Position = new Vector3(0, 0, 6),
+                Position = new Vector3(0, 1, 6),
                 //Position = new Vector3(0, 0, -10),
                 Scale = new Vector3(0.1f, 0.1f, 0.1f)
             };
-            var data = createCube(vertexDataCube, 5);
-
+            var data = createCube(vertexDataCube, 3);
+            Console.WriteLine(data.Count);
             //data = data.Select(x => normalize(Vector4.Zero, x, -300f)).ToList();
-            //data = data.GetRange(0, 10000000);
-            //Console.WriteLine(data.Count());
-            primordialObject.SetVertexData(data);
-            renderObjects.Add(primordialObject);
-            //using var renderer = new OpenGLRenderer.OpenGLRenderer();
-            using var renderer = new DirectXRenderer.DirectXRenderer();
-            renderer.Initialize(800,800, renderObjects);
-            renderer.Start();
+                primordialObject.SetVertexData(data);
+                renderObjects = new List<PrimordialObject>();
+                renderObjects.Add(primordialObject);
+                using var renderer = new OpenGLRenderer.OpenGLRenderer();
+                //using var renderer = new DirectXRenderer.DirectXRenderer();
+                renderer.Initialize(800,800, renderObjects, "DirectX");
+                renderer.Start();
         }
 
      /*   public static VertexDataStruct normalize(Vector4 center, VertexDataStruct point, float length)
@@ -126,8 +125,8 @@ namespace PrimordialEngine
         {
 
             var vertexMid1= new VertexDataStruct(new Vector4((triangles[0].Position.X + triangles[1].Position.X) / 2, (triangles[0].Position.Y + triangles[1].Position.Y) / 2, (triangles[0].Position.Z + triangles[1].Position.Z) / 2, 1.0f), Color.Red, triangles[0].Normal);
-            var vertexMid2= new VertexDataStruct(new Vector4((triangles[1].Position.X + triangles[2].Position.X) / 2, (triangles[1].Position.Y + triangles[2].Position.Y) / 2, (triangles[1].Position.Z + triangles[2].Position.Z) / 2, 1.0f), Color.Red, triangles[0].Normal);
-            var vertexMid3 = new VertexDataStruct(new Vector4((triangles[2].Position.X + triangles[0].Position.X) / 2, (triangles[2].Position.Y + triangles[0].Position.Y) / 2, (triangles[2].Position.Z + triangles[0].Position.Z) / 2, 1.0f), Color.Red, triangles[0].Normal);
+            var vertexMid2= new VertexDataStruct(new Vector4((triangles[1].Position.X + triangles[2].Position.X) / 2, (triangles[1].Position.Y + triangles[2].Position.Y) / 2, (triangles[1].Position.Z + triangles[2].Position.Z) / 2, 1.0f), Color.Green, triangles[0].Normal);
+            var vertexMid3 = new VertexDataStruct(new Vector4((triangles[2].Position.X + triangles[0].Position.X) / 2, (triangles[2].Position.Y + triangles[0].Position.Y) / 2, (triangles[2].Position.Z + triangles[0].Position.Z) / 2, 1.0f), Color.Blue, triangles[0].Normal);
             var newTriangles = new List <VertexDataStruct>();
             var trianglesFinal = new List<VertexDataStruct>();
 
@@ -160,9 +159,10 @@ namespace PrimordialEngine
             }
             newTriangles = new List<VertexDataStruct>();
 
-            newTriangles.Add(vertexMid1);
+
             newTriangles.Add(vertexMid2);
             newTriangles.Add(vertexMid3);
+            newTriangles.Add(vertexMid1);
 
             if (count > 0)
             {

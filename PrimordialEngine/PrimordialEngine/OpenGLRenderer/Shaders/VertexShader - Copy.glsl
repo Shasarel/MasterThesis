@@ -10,6 +10,9 @@ uniform mat4 MVP_Matrix;
 uniform mat4 model_Matrix;
 
 void main(void) {
-	gl_Position = in_Position;
+	gl_Position = MVP_Matrix * in_Position;
+	fragment_Pos = (model_Matrix * in_Position).xyz;
 	pass_Color = in_Color.xyz;
+	pass_Normal = mat3(transpose(inverse(model_Matrix))) * in_Normal.xyz;
+
 }

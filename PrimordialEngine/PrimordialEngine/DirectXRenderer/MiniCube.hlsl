@@ -4,7 +4,6 @@
 	float4 col : COLOR;
 	float4 normal : NORMAL;
 };
-
 struct PS_IN
 {
 	float4 pos : SV_POSITION;
@@ -12,8 +11,6 @@ struct PS_IN
 	float4 col : COLOR;
 	float4 normal : NORMAL;
 };
-
-
 float4x4 worldViewProj;
 
 cbuffer myBuffer: register(b1)
@@ -26,7 +23,6 @@ cbuffer myBuffer2: register(b2)
     float4x4 modelMatrixInv;
 }
 
-
 PS_IN VS(VS_IN input)
 {
 	PS_IN output = (PS_IN) 0;
@@ -38,10 +34,6 @@ PS_IN VS(VS_IN input)
 	
 	return output;
 }
-
-
-
-
 
 float4 PS(PS_IN input) : SV_Target
 {
